@@ -30,11 +30,16 @@ wsServer.on("request", request => {
         
         //user wants to create a new game
         if(result.method === "create"){
-            const clientId = result.clientId;
+            const clientId = result.client.clientId;
             const gameId = guid();
             games[gameId] = {
                 "id":gameId,
-                "clients": []
+                "clients": [],
+                "status": false,
+                "letter": "",
+                "listNombres": [],
+                "listColores":[],
+                "listFlores":[]
             }
 
             const payLoad = {
@@ -50,23 +55,162 @@ wsServer.on("request", request => {
         //a client want to join
         if (result.method === "join") {
 
-            const clientId = result.clientId;
+            const client = result.client;
             const gameId = result.gameId;
             const game = games[gameId];
 
             game.clients.push({
-                "clientId": clientId
+                "client": client
             })
+
+
 
             const payLoad = {
                 "method": "join",
                 "game": game
             }
+
             //loop through all clients and tell them that people has joined
             game.clients.forEach(c => {
-                clients[c.clientId].connection.send(JSON.stringify(payLoad))
+                clients[c.client.clientId].connection.send(JSON.stringify(payLoad))
             })
+
+            //if game hasn't started and there are more than two players start game.
+            if (game.clients.length >= 2 && game.status === false){
+                game.status = true;
+                var characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'
+                var charactersLength = characters.length;
+                game.letter = characters.charAt(Math.floor(Math.random() * charactersLength));
+                
+                const payLoad = {
+                    "method": "start",
+                    "game": game
+                }
+
+                game.clients.forEach(c => {
+                    clients[c.client.clientId].connection.send(JSON.stringify(payLoad))
+                })
+            } 
+
+
+            
         }
+
+        if(result.method === "basta"){
+            const gameId = result.gameId;
+            const game = games[gameId];
+
+            const payLoad = {
+                "method": "basta",
+                "game": games[gameId]
+            }
+
+            game.clients.forEach(c => {
+                clients[c.client.clientId].connection.send(JSON.stringify(payLoad))
+            })
+
+            console.log("poteto");
+
+        }
+
+        if(result.method === "finishGame"){
+            const gameId = result.gameId;
+            const game = games[gameId];
+            const client = result.client;
+
+            console.log("finiiiish")
+
+            game.clients.forEach(c => {
+
+                if(c.client.clientId == client.clientId){
+                    c.client.words.nombre = client.words.nombre
+                    game.listNombres.push(client.words.nombre.toUpperCase())
+                    c.client.words.color = client.words.color
+                    game.listColores.push(client.words.color.toUpperCase())
+                    c.client.words.flor = client.words.flor
+                    game.listFlores.push(client.words.flor.toUpperCase())
+                }
+
+                
+            })
+
+
+        }
+
+        if(result.method === "result"){
+            const gameId = result.gameId;
+            const game = games[gameId];
+            const client = result.client;
+            var winnerIds = []
+
+            
+
+            game.clients.forEach(c=>{
+                
+
+                //check if word starts with the letter
+                //check if word is more than once in the list
+
+                console.log(c.client.words.nombre)
+                console.log(game.listNombres)
+
+                if(c.client.words.nombre.charAt(0).toUpperCase() === game.letter){
+                    const ocurrence = getOccurrence(game.listNombres, c.client.words.nombre.toUpperCase)
+                    if(ocurrence >1){
+                        c.client.score += 100
+                    }
+                    else{
+                        c.client.score +=50
+                    }
+                }
+                
+
+                //check if word starts with the letter
+                //check if word is more than once in the list
+                if(c.client.words.color.charAt(0).toUpperCase() === game.letter){
+                    const ocurrence = getOccurrence(game.listColores, c.client.words.color.toUpperCase)
+                    if(ocurrence >1){
+                        c.client.score += 100
+                    }
+                    else{
+                        c.client.score +=50
+                    }
+                }
+                //check if word starts with the letter
+                //check if word is more than once in the list
+                if(c.client.words.flor.charAt(0).toUpperCase() === game.letter){
+                    const ocurrence = getOccurrence(game.listFlores, c.client.words.flor.toUpperCase)
+                    if(ocurrence >1){
+                        c.client.score += 100
+                    }
+                    else{
+                        c.client.score +=50
+                    }
+                }
+                //look for the highest score 
+
+                if(winnerIds.length== 0 || winnerIds[0].score< c.client.score){
+                    winnerIds = [c.client]
+                }
+                else if(winnerIds[0].score == c.client.score){
+                    winnerIds.push(c.client)
+                }
+            })
+
+            const payLoad = {
+                "method": "result",
+                "game": games[gameId],
+                "winners": winnerIds
+            }
+
+            game.clients.forEach(c => {
+                clients[c.client.clientId].connection.send(JSON.stringify(payLoad))
+            })
+
+            
+        }
+
+
 
 
     })
@@ -85,6 +229,13 @@ wsServer.on("request", request => {
     connection.send(JSON.stringify(payLoad))
 
 }) 
+
+function getOccurrence(array, value) {
+    var count = 0;
+    array.forEach((v) => (v === value && count++));
+    return count;
+}
+
 
 
 

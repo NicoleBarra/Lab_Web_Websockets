@@ -11,21 +11,38 @@
     <button id = 'btnJoin'>Join Game</button>
     <input type = 'text' id = 'txtGameId'>
     <div id  = 'divPlayers'></div>
+    <div id = "letterDiv"></div>
+    <div id = 'divGame'>
+        <input id="inp1" disabled>
+        <input id="inp2" disabled>
+        <input id="inp3" disabled>
+        <button id="bastabtn" disabled>BASTA!</button>
+        <div id="countdown"></div>
+    </div>
     <script>
         //HTML elements
         let clientId = null;
+        let client = null;
         let gameId = null;
         let ws = new WebSocket("ws://localhost:9090")
         const btnCreate = document.getElementById("btnCreate");
         const btnJoin = document.getElementById("btnJoin");
         const txtGameId = document.getElementById("txtGameId");
         const divPlayers = document.getElementById("divPlayers");
+        const divGame = document.getElementById("divGame");
+        const bastabtn = document.getElementById("bastabtn");
+        const inp1 = document.getElementById("inp1");
+        const inp2 = document.getElementById("inp2");
+        const inp3 = document.getElementById("inp3");
+        const letterDiv = document.getElementById("letterDiv");
+        const countdown = document.getElementById("countdown");
 
         //wiring events
         btnCreate.addEventListener("click", e=> {
+
             const payLoad = {
                 "method":"create",
-                "clientId":clientId
+                "client":client
             }
 
             ws.send(JSON.stringify(payLoad));
@@ -38,11 +55,35 @@
             }
             const payLoad = {
                 "method":"join",
-                "clientId":clientId,
+                "client":client,
                 "gameId": gameId
             }
 
             ws.send(JSON.stringify(payLoad));
+        })
+
+        bastabtn.addEventListener("click",e=> {
+            //agarra los values de los text input de todos los clientes
+            //en el server hace la lógica para elegir al ganador
+
+            inp1.disabled = true;
+            inp2.disabled = true;
+            inp3.disabled = true;
+
+
+            const payLoad = {
+                "method":"basta",
+                "gameId": gameId
+            }
+
+            const payLoad2 = {
+                "method":"result",
+                "gameId": gameId
+            }
+            ws.send(JSON.stringify(payLoad));
+
+            setTimeout(() =>  ws.send(JSON.stringify(payLoad2)),12000)
+
         })
 
 
@@ -53,6 +94,15 @@
             console.log(response);
             if(response.method === "connect"){
                 clientId = response.clientId;
+                client = {
+                "clientId" :clientId,
+                "score":0,
+                "words": {
+                    "nombre" : "",
+                    "color" : "",
+                    "flor" : ""
+                }
+            }
             }
 
             if(response.method === "create"){
@@ -71,12 +121,70 @@
 
                     const d = document.createElement("div");
                     d.style.width = "200px";
-                    d.textContent = c.clientId;
+                    d.textContent = c.client.clientId;
                     divPlayers.appendChild(d);
 
                     
                 })
             }
+
+             //start
+             //TODO: conteos
+            if (response.method === "start"){
+                const game = response.game;
+                
+                const letter = document.createElement("h2");
+                letter.textContent = game.letter;
+                letterDiv.appendChild(letter);
+
+
+
+                inp1.disabled = false;
+                inp2.disabled = false;
+                inp3.disabled = false;
+                bastabtn.disabled = false;
+                
+            }
+
+            if(response.method === "basta"){
+                bastabtn.disabled = true;
+                var timeleft = 10;
+                var downloadTimer = setInterval(function(){
+                if(timeleft == 0){
+                    clearInterval(downloadTimer);
+                    countdown.innerHTML = "Finished";
+                    inp1.disabled = true;
+                    inp2.disabled = true;
+                    inp3.disabled = true;
+
+                    client.words.nombre = inp1.value;
+                    client.words.color = inp2.value;
+                    client.words.flor = inp3.value;
+
+                    const payLoad = {
+                    "method":"finishGame",
+                    "client":client,
+                    "gameId": gameId
+                    }
+
+                    ws.send(JSON.stringify(payLoad));
+                } else {
+                    countdown.innerHTML = timeleft + " s";
+                }
+                timeleft -= 1;
+                }, 1000);
+
+  
+            }
+            if (response.method === "result"){
+                const game = response.game;
+                const winners = response.winners;
+                
+                console.log("winner ids")
+                console.log(winners)
+                
+            }
+
         }
     </script>
 </body>
