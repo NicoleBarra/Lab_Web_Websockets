@@ -30,11 +30,13 @@ wsServer.on("request", request => {
         
         //user wants to create a new game
         if(result.method === "create"){
-            const clientId = result.clientId;
+            const clientId = result.client.clientId;
             const gameId = guid();
             games[gameId] = {
                 "id":gameId,
-                "clients": []
+                "clients": [],
+                "status": false,
+                "letter": ""
             }
 
             const payLoad = {
@@ -50,22 +52,45 @@ wsServer.on("request", request => {
         //a client want to join
         if (result.method === "join") {
 
-            const clientId = result.clientId;
+            const client = result.client;
             const gameId = result.gameId;
             const game = games[gameId];
 
             game.clients.push({
-                "clientId": clientId
+                "client": client
             })
+
+
 
             const payLoad = {
                 "method": "join",
                 "game": game
             }
+
             //loop through all clients and tell them that people has joined
             game.clients.forEach(c => {
-                clients[c.clientId].connection.send(JSON.stringify(payLoad))
+                clients[c.client.clientId].connection.send(JSON.stringify(payLoad))
             })
+
+            //if game hasn't started and there are more than two players start game.
+            if (game.clients.length >= 2 && game.status === false){
+                game.status = true;
+                var characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'
+                var charactersLength = characters.length;
+                game.letter = characters.charAt(Math.floor(Math.random() * charactersLength));
+                
+                const payLoad = {
+                    "method": "start",
+                    "game": game
+                }
+
+                game.clients.forEach(c => {
+                    clients[c.clientId].connection.send(JSON.stringify(payLoad))
+                })
+            } 
+
+
+            
         }
 
 
@@ -85,6 +110,10 @@ wsServer.on("request", request => {
     connection.send(JSON.stringify(payLoad))
 
 }) 
+
+function startGame(){
+
+}
 
 
 
