@@ -17,6 +17,7 @@
         <input id="inp2" disabled>
         <input id="inp3" disabled>
         <button id="bastabtn" disabled>BASTA!</button>
+        <div id="countdown"></div>
     </div>
     <script>
         //HTML elements
@@ -34,17 +35,10 @@
         const inp2 = document.getElementById("inp2");
         const inp3 = document.getElementById("inp3");
         const letterDiv = document.getElementById("letterDiv");
+        const countdown = document.getElementById("countdown");
 
         //wiring events
         btnCreate.addEventListener("click", e=> {
-            const client = {
-                "clientId" :clientId,
-                "words": {
-                    "nombre" : "",
-                    "color" : "",
-                    "flor" : ""
-                }
-            }
 
             const payLoad = {
                 "method":"create",
@@ -72,6 +66,23 @@
             //agarra los values de los text input de todos los clientes
             //en el server hace la lógica para elegir al ganador
 
+            inp1.disabled = true;
+            inp2.disabled = true;
+            inp3.disabled = true;
+
+
+            const payLoad = {
+                "method":"basta",
+                "gameId": gameId
+            }
+
+            const payLoad2 = {
+                "method":"result",
+                "gameId": gameId
+            }
+            ws.send(JSON.stringify(payLoad));
+
+            setTimeout(() =>  ws.send(JSON.stringify(payLoad2)),12000)
 
         })
 
@@ -83,6 +94,15 @@
             console.log(response);
             if(response.method === "connect"){
                 clientId = response.clientId;
+                client = {
+                "clientId" :clientId,
+                "score":0,
+                "words": {
+                    "nombre" : "",
+                    "color" : "",
+                    "flor" : ""
+                }
+            }
             }
 
             if(response.method === "create"){
@@ -125,6 +145,46 @@
                 bastabtn.disabled = false;
                 
             }
+
+            if(response.method === "basta"){
+                bastabtn.disabled = true;
+                var timeleft = 10;
+                var downloadTimer = setInterval(function(){
+                if(timeleft == 0){
+                    clearInterval(downloadTimer);
+                    countdown.innerHTML = "Finished";
+                    inp1.disabled = true;
+                    inp2.disabled = true;
+                    inp3.disabled = true;
+
+                    client.words.nombre = inp1.value;
+                    client.words.color = inp2.value;
+                    client.words.flor = inp3.value;
+
+                    const payLoad = {
+                    "method":"finishGame",
+                    "client":client,
+                    "gameId": gameId
+                    }
+
+                    ws.send(JSON.stringify(payLoad));
+                } else {
+                    countdown.innerHTML = timeleft + " s";
+                }
+                timeleft -= 1;
+                }, 1000);
+
+  
+            }
+            if (response.method === "result"){
+                const game = response.game;
+                const winners = response.winners;
+                
+                console.log("winner ids")
+                console.log(winners)
+                
+            }
+
         }
     </script>
 </body>
