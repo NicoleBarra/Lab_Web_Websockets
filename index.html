@@ -4,20 +4,107 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Document</title>
+    <style>
+        body h1{
+           text-align:center; 
+        }
+        #GameTable {
+            font-family: Arial, Helvetica, sans-serif;
+            border-collapse: collapse;
+            width: 100%;
+        }
+
+        #GameTable td, #GameTable th {
+            border: 1px solid #ddd;
+            padding: 8px;
+        }
+
+        #GameTable tr:nth-child(even){background-color: #fc7060;}
+
+        
+
+        #GameTable th {
+            padding-top: 12px;
+            padding-bottom: 12px;
+            text-align: left;
+            background-color: red;
+            color: white;
+            text-align:center;
+        }
+
+        button{
+            width: 150px;
+            height: 30px;
+            font-family: Arial, Helvetica, sans-serif;
+            font-size: 15px;
+            box-shadow: 0 8px 16px 0 rgba(0,0,0,0.2), 0 6px 20px 0 rgba(0,0,0,0.19);
+            margin-bottom: 10px;
+            margin-top: 10px;
+            background-color: #fc7060;
+            font-weight: bold;
+            border-radius: 25px;
+        }
+        td input{
+            width: 100%;
+            border-radius: 25px;
+            border: 2px solid #fc7060;
+            height: 25px; 
+        }
+        #txtGameId{
+            border-radius: 25px;
+            border: 2px solid red;
+            height: 25px;
+            
+        }
+        #redPanda{
+            margin-top:15px;
+            margin-left:150px;
+                
+        }
+        #penguin{
+            margin-top:90px;
+            height:350px;
+            width:auto;
+            margin-left:450px;
+           
+            transform: scaleX(-1);
+            position:fixed;
+            
+        }
+    
+    
+    
+    </style>
 </head>
 <body>
-    <h1>Basta!</h1>
+    <h1>BASTA!</h1>
     <button id = 'btnCreate'>New Game</button>
     <button id = 'btnJoin'>Join Game</button>
     <input type = 'text' id = 'txtGameId'>
-    <div id  = 'divPlayers'></div>
+    <h4>Game ID: </h4>
+    <div id  = 'GameId'></div>
+    <h4>Players: </h4>
+    <div id  = 'divPlayers'></div><br>
     <div id = "letterDiv"></div>
     <div id = 'divGame'>
-        <input id="inp1" disabled>
-        <input id="inp2" disabled>
-        <input id="inp3" disabled>
+        <table id="GameTable">
+            <tr>
+                <th>Nombre</th>
+                <th>Color</th>
+                <th>Flor</th>
+            </tr>
+            <tr>
+                <td><input id="inp1" disabled></td>
+                <td><input id="inp2" disabled></td>
+                <td><input id="inp3" disabled></td>
+            </tr>
+  
+        </table>
         <button id="bastabtn" disabled>BASTA!</button>
         <div id="countdown"></div>
+        
+        <img id="redPanda" src ="https://st4.depositphotos.com/8846958/40560/i/600/depositphotos_405600188-stock-photo-cute-watercolor-red-panda-white.jpg" alt="Red Panda">
+        <img id="penguin" src="data:image/jpeg;base64,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">
     </div>
     <script>
         //HTML elements
@@ -28,6 +115,7 @@
         const btnCreate = document.getElementById("btnCreate");
         const btnJoin = document.getElementById("btnJoin");
         const txtGameId = document.getElementById("txtGameId");
+        const Gameid = document.getElementById("GameId");
         const divPlayers = document.getElementById("divPlayers");
         const divGame = document.getElementById("divGame");
         const bastabtn = document.getElementById("bastabtn");
@@ -108,6 +196,13 @@
             if(response.method === "create"){
                 gameId = response.game.id;
                 console.log("game succesfully created");
+                const d = document.createElement("div");
+                d.style.width="200px";
+                d.textContent = gameId;
+                if (Gameid.firstChild){
+                    Gameid.removeChild(Gameid.firstChild);
+                }
+                Gameid.appendChild(d);
             }
 
             //join
